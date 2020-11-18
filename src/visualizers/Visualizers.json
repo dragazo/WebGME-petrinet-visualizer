@@ -1,0 +1,8 @@
+[
+  {
+    "id": "petriviz",
+    "title": "petriviz",
+    "panel": "panels/petriviz/petrivizPanel",
+    "DEBUG_ONLY": false
+  }
+]

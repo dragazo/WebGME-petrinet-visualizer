@@ -1,0 +1,18 @@
+{
+  "components": {
+    "visualizers": {
+      "petriviz": {
+        "src": "panels/petriviz/petrivizPanel",
+        "title": "petriviz",
+        "panel": "src/visualizers/panels/petriviz",
+        "secondary": false,
+        "widget": "src/visualizers/widgets/petriviz"
+      }
+    },
+    "seeds": {}
+  },
+  "dependencies": {
+    "visualizers": {},
+    "seeds": {}
+  }
+}
