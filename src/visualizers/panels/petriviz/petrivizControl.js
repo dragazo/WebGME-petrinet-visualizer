@@ -228,6 +228,13 @@ define([
         });
         this._toolbarItems.push(this.$btnClassify);
 
+        this.$btnReset = toolBar.addButton({
+            title: 'Reset Markings',
+            icon: 'glyphicon glyphicon-repeat',
+            clickFn: () => self._widget.resetMarkings(),
+        });
+        this._toolbarItems.push(this.$btnReset);
+
         /************** Go to hierarchical parent button ****************/
         // this.$btnModelHierarchyUp = toolBar.addButton({
         //     title: 'Go to parent',

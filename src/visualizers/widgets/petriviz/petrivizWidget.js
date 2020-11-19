@@ -151,6 +151,13 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
         }
     };
 
+    petrivizWidget.prototype.resetMarkings = function() {
+        for (const place of Object.values(this._places)) {
+            updateMarks(place.simnode, place.gmenode.getAttribute('initMarking'));
+        }
+        this.updateAllTransColors();
+    };
+
     petrivizWidget.prototype.getFreeChoiceCounterexample = function () {
         const trans = Object.values(this._transitions);
         for (let i = 0; i < trans.length; ++i) {
@@ -190,7 +197,7 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
         
         const source = sources[0];
         const sink = sinks[0];
-        const nodes = Object.values(this._places) + Object.values(this._transitions);
+        const nodes = Object.values(this._places).concat(Object.values(this._transitions));
         for (const x of nodes) {
             if (!this.pathExists(source, x) || !this.pathExists(x, sink)) return ['reach', source, x, sink];
         }
@@ -374,7 +381,7 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
                     text: { text: node.getAttribute('name') },
                 },
             });
-            updateMarks(place, 0);
+            updateMarks(place, node.getAttribute('initMarking'));
             this._graph.addCell([place]);
             this._places[desc.id] = {
                 id: desc.id,
@@ -382,6 +389,7 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
                 gmenode: node,
             };
             this.addMissingArcs();
+            this.updateAllTransColors();
         }
         else if (node.isInstanceOf(TRANS_TYPE)) {
             const position = node.getRegistry('position');
@@ -399,6 +407,7 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
                 gmenode: node,
             };
             this.addMissingArcs();
+            this.updateAllTransColors();
         }
         else if (node.isInstanceOf(ARC_TYPE)) {
             const src = node.getPointerId('src');
@@ -408,6 +417,7 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
                 gmenode: node,
             };
             this.addMissingArcs();
+            this.updateAllTransColors();
         }
 
 
