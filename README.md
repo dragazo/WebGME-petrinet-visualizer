@@ -19,6 +19,8 @@ By this design, Petri nets are useful tools to model parallel and network proces
 ## Installation
 
 Firstly, ensure that you have all the required dependencies for [WebGME](https://github.com/webgme/webgme) itself.
+You'll also need to install [`jointjs`](https://www.jointjs.com/), and [`lodash`](https://lodash.com/), which can be done through `npm` (i.e. `npm install jointjs losash`).
+Make sure you grab all dependencies with `npm install`.
 
 If all you want is a fresh instance of WebGME with this extension, simply clone the repository and start your server via `node ./app.js` from the project's root directory.
 Upon visiting the website, `localhost:8888`, there will be a seed project named `petri` which contains the required metamodel and some example networks to test the visualizer.
