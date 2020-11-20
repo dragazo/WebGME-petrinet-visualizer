@@ -59,11 +59,10 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
     }
 
     petrivizWidget.prototype._initialize = function () {
-        const width = this._el.width(),
-            height = this._el.height(),
-            self = this;
+        const width = this._el.width();
+        const height = this._el.height();
+        const self = this;
 
-        // set widget class
         this._el.addClass(WIDGET_CLASS);
 
         this._graph = new jointjs.dia.Graph;
@@ -131,16 +130,6 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
                 { tagName: 'text', selector: 'label' },
             ],
         });
-
-        // // Create a dummy header
-        // this._el.append('<h3>petriviz Events:</h3>');
-
-        // // Registering to events can be done with jQuery (as normal)
-        // this._el.on('dblclick', function (event) {
-        //     event.stopPropagation();
-        //     event.preventDefault();
-        //     self.onBackgroundDblClick();
-        // });
     };
 
     petrivizWidget.prototype.onWidgetContainerResize = function (width, height) {
@@ -207,24 +196,24 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
     petrivizWidget.prototype.getClassifyString = function() {
         let res = '';
 
-        const formatNode = n => `${n.simnode.attr('.label/text')} (${n.id})`;
+        const formatNode = n => `'${n.gmenode.getAttribute('name')}' (${n.id})`;
 
         let counter = this.getFreeChoiceCounterexample();
         if (!counter) res += 'Free Choice\n';
-        else res += `Not Free Choice: transitions '${formatNode(counter[0])} and '${formatNode(counter[1])}) have common inplaces\n`;
+        else res += `Not Free Choice: transitions ${formatNode(counter[0])} and ${formatNode(counter[1])}) have common inplaces\n`;
 
         counter = this.getStateMachineCounterexample();
         if (!counter) res += 'State Machine\n';
-        else res += `Not State Machine: transition '${formatNode(counter[0])}) has ${counter[1]} ${counter[2]}places\n`;
+        else res += `Not State Machine: transition ${formatNode(counter[0])}) has ${counter[1]} ${counter[2]}places\n`;
 
         counter = this.getMarkedGraphCounterexample();
         if (!counter) res += 'Marked Graph\n';
-        else res += `Not Marked Graph: place '${formatNode(counter[0])}) has ${counter[1]} ${counter[2]} transitions\n`;
+        else res += `Not Marked Graph: place ${formatNode(counter[0])}) has ${counter[1]} ${counter[2]} transitions\n`;
 
         counter = this.getWorkflowCounterexample();
         if (!counter) res += 'Workflow Graph\n';
-        else if (counter[0] === 'source') res += `Not Workflow Graph: graph has '${counter[1].length}' sources\n`;
-        else if (counter[0] === 'sink') res += `Not Workflow Graph: graph has '${counter[1].length}' sinks\n`;
+        else if (counter[0] === 'source') res += `Not Workflow Graph: graph has ${counter[1].length}' sources\n`;
+        else if (counter[0] === 'sink') res += `Not Workflow Graph: graph has ${counter[1].length}' sinks\n`;
         else if (counter[0] === 'reach') res += `Not Workflow Graph: no path from source ${formatNode(counter[1])} to sink ${formatNode(counter[3])} containing ${formatNode(counter[2])}\n`;
         else res += 'Not Workflow Graph'; // should never happen unless impl changes
 
@@ -234,11 +223,11 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
     /// returns true if `from === to` or if there is a (directed) path `from -> to`
     petrivizWidget.prototype.pathExists = function (from, to) {
         const visited = new Set();
-        const queue = [from];
+        let queue = [from];
         while (queue.length > 0) {
             const p = queue[0];
             if (p === to) return true;
-            delete queue[0];
+            queue = queue.splice(1);
             visited.add(p);
 
             for (const entry of this.getOutplaces(p)) {
@@ -280,12 +269,20 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
         return res;
     };
 
-    petrivizWidget.prototype.updateTransColor = function(trans) {
-        const color = this.isTransitionEnabled(trans) ? '#00aacc' : '#000000';
-        trans.simnode.attr('.root/fill', color);
-    };
     petrivizWidget.prototype.updateAllTransColors = function() {
-        for (const trans of Object.values(this._transitions)) this.updateTransColor(trans);
+        let anyEnabled = false;
+        for (const trans of Object.values(this._transitions)) {
+            const enabled = this.isTransitionEnabled(trans)
+            if (enabled) anyEnabled = true;
+
+            const color = enabled ? '#00aacc' : '#000000';
+            trans.simnode.attr('.root/fill', color); // update color to reflect enabled/disabled (black is disabled, teal is enabled)
+        }
+        if (!anyEnabled) {
+            for (const trans of Object.values(this._transitions)) {
+                trans.simnode.attr('.root/fill', '#ff0000'); // if there are no enabled transitions (deadlock), set them all to red (instead of all black)
+            }
+        }
     }
 
     petrivizWidget.prototype.isTransitionEnabled = function(trans) {
@@ -298,6 +295,15 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
     petrivizWidget.prototype.fireTransition = function(trans) {
         const inplaces = this.getInplaces(trans);
         const outplaces = this.getOutplaces(trans);
+        const self = this;
+        const handleOutplaces = function() {
+            for (const p of outplaces) {
+                p.arc.simnode.findView(self._paper).sendToken(jointjs.V('circle', { r: 5, fill: '#3ae014' }), ANIMATION_TIME, () => {
+                    updateMarks(p.place.simnode, getMarks(p.place.simnode) + 1);
+                    self.updateAllTransColors(); // update colors after incrementing each (some might still be running)
+                });
+            }
+        };
         if (inplaces.length !== 0) {
             for (const p of inplaces) {
                 updateMarks(p.place.simnode, getMarks(p.place.simnode) - 1);
@@ -307,17 +313,9 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
             for (const p of inplaces) {
                 p.arc.simnode.findView(this._paper).sendToken(jointjs.V('circle', { r: 5, fill: '#3ae014' }), ANIMATION_TIME);
             }
-            last.arc.simnode.findView(this._paper).sendToken(jointjs.V('circle', { r: 5, fill: '#3ae014' }), ANIMATION_TIME, () => {
-                if (outplaces.length !== 0) {
-                    for (const p of outplaces) {
-                        p.arc.simnode.findView(this._paper).sendToken(jointjs.V('circle', { r: 5, fill: '#3ae014' }), ANIMATION_TIME, () => {
-                            updateMarks(p.place.simnode, getMarks(p.place.simnode) + 1);
-                            this.updateAllTransColors(); // update colors after incrementing each (some might still be running)
-                        });
-                    }
-                }
-            });
+            last.arc.simnode.findView(this._paper).sendToken(jointjs.V('circle', { r: 5, fill: '#3ae014' }), ANIMATION_TIME, handleOutplaces);
         }
+        else handleOutplaces(); // if no inputs, just do the outputs
     };
 
     petrivizWidget.prototype.getPlaceWithCID = function(cid) {
@@ -419,121 +417,18 @@ define(['jointjs', 'css!./styles/petrivizWidget.css', 'css!jointjscss'], functio
             this.addMissingArcs();
             this.updateAllTransColors();
         }
-
-
-
-
-        // if (desc) {
-        //     // Add node to a table of nodes
-        //     var node = document.createElement('div'),
-        //         label = 'children';
-
-        //     if (desc.childrenIds.length === 1) {
-        //         label = 'child';
-        //     }
-
-        //     this.nodes[desc.id] = desc;
-        //     node.innerHTML = 'Adding node "' + desc.name + '" (click to view). It has ' +
-        //         desc.childrenIds.length + ' ' + label + '.';
-
-        //     this._el.append(node);
-        //     node.onclick = this.onNodeClick.bind(this, desc.id);
-        // }
     };
-
     petrivizWidget.prototype.removeNode = function (gmeId) {
-        // var desc = this.nodes[gmeId];
-        // this._el.append('<div>Removing node "' + desc.name + '"</div>');
-        // delete this.nodes[gmeId];
     };
-
     petrivizWidget.prototype.updateNode = function (desc) {
-        // if (desc) {
-        //     this._logger.debug('Updating node:', desc);
-        //     this._el.append('<div>Updating node "' + desc.name + '"</div>');
-        // }
     };
-
-    // actual simulator functions
-    petrivizWidget.prototype.initNetwork = function (descriptor) {
-        const pn = jointjs.shapes.pn;
-
-        const place1 = new this._place({
-            position: { x: 200, y: 100 },
-            attrs: {
-                text: { text: 'ready' },
-                label: { text: 'other' },
-            },
-        });
-        const place2 = new this._place({
-            position: { x: 200, y: 300 },
-            attrs: {
-                text: { text: 'whatever' },
-                label: { text: 'other' },
-            },
-        });
-        const transition1 = new pn.Transition({
-            position: { x: 50, y: 200 },
-            attrs: {
-                '.label': {
-                    text: 'produce',
-                    fill: '#fe854f',
-                },
-                '.root': {
-                    fill: '#9586fd',
-                    stroke: '#9586fd',
-                },
-            },
-        });
-        // const link1 = new pn.Link({
-        //     source: { id: place1.id, selector: '.root' },
-        //     target: { id: transition1.id, selector: '.root' },
-        //     attrs: {
-        //         '.connection': {
-        //             fill: 'none',
-        //             'stroke-linejoin': 'round',
-        //             'stroke-width': '2',
-        //             stroke: '#4b4a67',
-        //         },
-        //     },
-        // });
-        const link2 = new jointjs.shapes.standard.Link();
-        link2.source(place1);
-        link2.target(transition1);
-
-        this._graph.addCell([place1, transition1, link2, place2]);
-
-        setTimeout(() => {
-            link2.findView(this._paper).sendToken(jointjs.V('circle', { r: 5, fill: '#feb662' }),
-                500, () => { console.log('token sent'); place2.attr('label/text', '1'); });
-        }, 1000);
-    };
-
-    // click handling
-    petrivizWidget.prototype.onElementClick = function (elementView, event) {
-        event.stopPropagation();
-        console.log(elementView);
-    };
-
-    /* * * * * * * * Visualizer event handlers * * * * * * * */
-
-    // petrivizWidget.prototype.onNodeClick = function (/*id*/) {
-    //     // This currently changes the active node to the given id and
-    //     // this is overridden in the controller.
-    // };
-
-    // petrivizWidget.prototype.onBackgroundDblClick = function () {
-    //     this._el.append('<div>Background was double-clicked!!</div>');
-    // };
 
     /* * * * * * * * Visualizer life cycle callbacks * * * * * * * */
     petrivizWidget.prototype.destroy = function () {
     };
-
     petrivizWidget.prototype.onActivate = function () {
         this._logger.debug('petrivizWidget has been activated');
     };
-
     petrivizWidget.prototype.onDeactivate = function () {
         this._logger.debug('petrivizWidget has been deactivated');
     };

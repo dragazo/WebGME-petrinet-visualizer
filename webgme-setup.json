@@ -9,7 +9,11 @@
         "widget": "src/visualizers/widgets/petriviz"
       }
     },
-    "seeds": {}
+    "seeds": {
+      "petri": {
+        "src": "src/seeds/petri"
+      }
+    }
   },
   "dependencies": {
     "visualizers": {},
