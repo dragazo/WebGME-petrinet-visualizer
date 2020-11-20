@@ -40,8 +40,10 @@ This creates a new, empty Petri net; double-click to enter it.
 From here, your should see `Place` and `Transition` in your tools panel.
 These are the relevant types for the majority of your modeling needs; simply drag and drop one onto the center to create a new instance.
 You can change the names of a place or transition via the `name` attribute in the bottom-right panel.
-Places additionally have an `initMarking` attribute that denotes how many marks it has when the network is started fresh (initial state).
 Finally, draw edges between places and transitions by clicking and dragging from the source (rather, one of the square anchor points therein) and dropping on the destination (anchor point).
+
+Places additionally have an `initMarking` attribute that denotes how many marks it has when the network is started fresh (initial state).
+When viewing a `PetriNet` itself (not its content) in the composition (default) view, the set of places and their initial markings are listed below it for convenience.
 
 ## Simulation
 
