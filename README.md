@@ -19,16 +19,16 @@ By this design, Petri nets are useful tools to model parallel and network proces
 ## Installation
 
 Firstly, ensure that you have all the required dependencies for [WebGME](https://github.com/webgme/webgme) itself.
-You'll also need to install [`jointjs`](https://www.jointjs.com/), and [`lodash`](https://lodash.com/), which can be done through `npm` (i.e. `npm install jointjs losash`).
-Make sure you grab all dependencies with `npm install`.
+This includes having `mongodb` installed and running.
 
-If all you want is a fresh instance of WebGME with this extension, simply clone the repository and start your server via `node ./app.js` from the project's root directory.
-Upon visiting the website, `localhost:8888`, there will be a seed project named `petri` which contains the required metamodel and some example networks to test the visualizer.
+If all you want is a fresh instance of WebGME with this extension, simply clone the repository, grab all dependencies with `npm install`, and start your server via `node ./app.js` from the repository's root directory.
+Upon visiting the website (`localhost:8888` by default), you can create a new project based on the `petri` seed (template) project, which contains the required metamodel and some example networks to demonstrate the visualizer.
 
 If you would instead like to add this extension to an existing instance of WebGME, proceed with the following (ensure your WebGME server is not running):
 
 * Copy `src/visualizers/widgets/petriviz` to your widgets directory and copy `src/visualizers/panels/petriviz` to your panels directory. This will also require updating your `src/visualizers/Visualizers.json` file (see the one in this repository for the required entry). This also requires updating `webgme-setup.json` (see ours for the required entry).
 * Add `src/seeds/petri` to your seeds. Other files must also be updated, so it is probably easiest to import the raw `src/seeds/petri/petri.webgmex` file directly by executing `webgme new seed -f PATH petri` from your installation's root directory where `PATH` is the path of the `.webgmex` file. This will create a new seed called `petri`.
+* Install [`jointjs`](https://www.jointjs.com/), and [`lodash`](https://lodash.com/), which can be done through `npm` with `npm install jointjs lodash`.
 
 After this is completed, simply start up your WebGME server (e.g. `node ./app.js`) and the installation should be completed.
 The new seed `petri` should contain the required metamodel to use the visualizer, and has its own examples with their own use-case documentation.
